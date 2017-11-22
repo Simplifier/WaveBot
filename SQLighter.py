@@ -11,9 +11,14 @@ class SQLighter:
         with self.connection:
             return self.cursor.execute('SELECT * FROM groups').fetchall()
 
-    def add_group(self, id, title):
+    def add_group(self, id, title, type):
         with self.connection:
-            self.cursor.execute('INSERT OR REPLACE INTO groups (id, title) VALUES (?, ?)', (id, title))
+            self.cursor.execute('INSERT OR REPLACE INTO groups (id, title, type) VALUES (?, ?, ?)', (id, title, type))
+            self.connection.commit()
+
+    def remove_group(self, id):
+        with self.connection:
+            self.cursor.execute('DELETE FROM groups WHERE id = ?', id)
             self.connection.commit()
 
     def get_masks(self):
