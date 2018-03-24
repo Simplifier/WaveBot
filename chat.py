@@ -41,16 +41,7 @@ class Chat:
             if group in msgs:
                 continue
 
-            res = None
-            if msg.text is not None:
-                res = self.bot.send_message(group, msg.text)
-            elif msg.photo_id != 0:
-                res = self.bot.send_photo(group, msg.photo_id)
-            elif msg.doc_id != 0:
-                res = self.bot.send_document(group, msg.doc_id)
-            else:
-                print('А где содержимое письма?!')
-
+            res = msg.send(self.bot, group)
             msgs[group] = res.message_id
 
         return len(groups) > 0
@@ -85,16 +76,19 @@ class Chat:
 
     def harvest_dead_messages(self):
         msgs = self.messages_to_resend
-        if len(msgs) <= config.max_msgs:
-            return
 
         while len(msgs) > config.max_msgs:
-            min_time = time()
-            oldest_id = 0
-            for msg_id in msgs:
-                if msgs[msg_id].timestamp < min_time:
-                    min_time = msgs[msg_id].timestamp
-                    oldest_id = msg_id
+            oldest_id = self._get_oldest_id(msgs)
 
-            self.messages_to_resend.pop(oldest_id, None)
+            msgs.pop(oldest_id, None)
             self.sent_messages.pop(oldest_id, None)
+
+    @staticmethod
+    def _get_oldest_id(msgs):
+        min_time = time()
+        oldest_id = 0
+        for msg_id in msgs:
+            if msgs[msg_id].timestamp < min_time:
+                min_time = msgs[msg_id].timestamp
+                oldest_id = msg_id
+        return oldest_id

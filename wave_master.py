@@ -1,4 +1,3 @@
-from time import time
 from typing import Dict
 
 from telebot import TeleBot
@@ -21,7 +20,21 @@ def add(message):
         db.add_group(chat.id, chat.title, chat.type)
 
 
-@bot.message_handler(func=lambda m: True, content_types=['text', 'document', 'photo'])
+@bot.message_handler(commands=['remove'])
+def remove(message):
+    chat = message.chat
+    if chat.type in ('group', 'supergroup'):
+        db.remove_group(chat.id)
+
+
+@bot.message_handler(commands=['clear_groups'])
+def clear_groups(message):
+    chat = message.chat
+    if chat.type in ('group', 'supergroup'):
+        db.remove_group(chat.id)
+
+
+@bot.message_handler(func=lambda m: True, content_types=['text', 'document', 'photo', 'video'])
 def suggest_resend(message: Message) -> None:
     if message.chat.type != 'private':
         return
@@ -35,11 +48,7 @@ def suggest_resend(message: Message) -> None:
     chat_id = message.chat.id
 
     # save message
-    msg: MessageData = MessageData(message.message_id, time(), message.text)
-    if message.content_type == 'photo':
-        msg.photo_id = message.photo[0].file_id
-    elif message.content_type == 'document':
-        msg.doc_id = message.document.file_id
+    msg: MessageData = MessageData(message)
 
     chat = chats.setdefault(chat_id, Chat(chat_id, bot, db))
     chat.messages_to_resend[msg.id] = msg
